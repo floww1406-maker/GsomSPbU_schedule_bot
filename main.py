@@ -109,9 +109,14 @@ async def main() -> None:
     # Регистрация роутеров
     dp.include_router(router)
     
-    # Startup и shutdown hooks
-    dp.startup.register(lambda: on_startup(bot, db, scheduler))
-    dp.shutdown.register(lambda: on_shutdown(bot, db, scheduler, api_client))
+    # Startup и shutdown hooks (правильный способ для aiogram 3.x)
+    @dp.startup()
+    async def startup_handler():
+        await on_startup(bot, db, scheduler)
+    
+    @dp.shutdown()
+    async def shutdown_handler():
+        await on_shutdown(bot, db, scheduler, api_client)
     
     # Запуск polling
     logger.info("Starting polling...")

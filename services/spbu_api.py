@@ -175,25 +175,47 @@ class SpbuApiClient:
         """
         Получение групп бакалавриата GSOM по году поступления.
         
+        Фильтрация по префиксу названия группы:
+        - 2024 -> "24."
+        - 2023 -> "23."
+        - 2022 -> "22."
+        
         Args:
-            year: Год поступления
+            year: Год поступления (полный, например 2024)
         
         Returns:
             Список групп
         """
         programs = await self.get_gsom_programs(level="Bachelor")
         
+        # Префикс года: 2024 -> "24.", 2023 -> "23."
+        year_prefix = f"{year % 100}."
+        
         all_groups = []
+        seen_group_ids = set()  # Для избежания дубликатов
+        
         for program in programs:
-            if program.get("Year") == year:
-                try:
-                    groups = await self.get_groups_by_program(program["ProgramId"])
-                    for group in groups:
+            try:
+                groups = await self.get_groups_by_program(program["ProgramId"])
+                for group in groups:
+                    group_id = group.get("StudentGroupId")
+                    group_name = group.get("StudentGroupName", "")
+                    
+                    # Фильтруем по префиксу года в названии группы
+                    if group_name.startswith(year_prefix) and group_id not in seen_group_ids:
                         group["ProgramName"] = program.get("Name", "")
                         all_groups.append(group)
-                except SpbuApiError as e:
-                    logger.warning(f"Failed to get groups for program {program['ProgramId']}: {e}")
-                    continue
+                        seen_group_ids.add(group_id)
+                        
+            except SpbuApiError as e:
+                logger.warning(f"Failed to get groups for program {program['ProgramId']}: {e}")
+                continue
+        
+        # Логирование для отладки
+        logger.info(f"Year {year} (prefix '{year_prefix}'): found {len(all_groups)} groups")
+        if all_groups:
+            sample_names = [g.get("StudentGroupName", "") for g in all_groups[:5]]
+            logger.info(f"Sample groups: {sample_names}")
         
         return all_groups
     
