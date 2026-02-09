@@ -1,0 +1,17 @@
+# Telegram Bot Framework
+aiogram==3.4.1
+
+# Async HTTP client
+aiohttp==3.9.3
+
+# Database
+aiosqlite==0.19.0
+
+# Scheduler
+apscheduler==3.10.4
+
+# Timezone handling
+pytz==2024.1
+
+# Environment variables
+python-dotenv==1.0.1
